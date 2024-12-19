@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, width=device-width">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <!-- Custom CSS -->
+    <link href="/static/styles.css" rel="stylesheet">
+
+    <link href="/static/favicon.ico" rel="icon">
+
+    <title>Black Scholes</title>
+
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="container form-container">
+                <h2 class="mb-4">Black-Scholes Option Pricing Model</h2>
+
+                <div class="mb-3">
+                    <label for="price" class="form-label">Current Asset Price:</label>
+                    <div class="input-group">
+                        <button class="btn btn-secondary" type="button" onclick="decrement('price', 1)">−</button>
+                        <input type="number" class="form-control" id="price" value="100.00" step="1">
+                        <button class="btn btn-secondary" type="button" onclick="increment('price', 1)">+</button>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="strike" class="form-label">Strike Price:</label>
+                    <div class="input-group">
+                        <button class="btn btn-secondary" type="button" onclick="decrement('strike', 1)">−</button>
+                        <input type="number" class="form-control" id="strike" value="100.00" step="1">
+                        <button class="btn btn-secondary" type="button" onclick="increment('strike', 1)">+</button>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="maturity" class="form-label">Time to Maturity (Years):</label>
+                    <div class="input-group">
+                        <button class="btn btn-secondary" type="button" onclick="decrement('maturity', 0.25)">−</button>
+                        <input type="number" class="form-control" id="maturity" value="1.00" step="0.25">
+                        <button class="btn btn-secondary" type="button" onclick="increment('maturity', 0.25)">+</button>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="volatility" class="form-label">Volatility (σ):</label>
+                    <div class="input-group">
+                        <button class="btn btn-secondary" type="button" onclick="decrement('volatility', 0.05)">−</button>
+                        <input type="number" class="form-control" id="volatility" value="0.20" step="0.05">
+                        <button class="btn btn-secondary" type="button" onclick="increment('volatility', 0.05)">+</button>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="interest" class="form-label">Risk-Free Interest Rate:</label>
+                    <div class="input-group">
+                        <button class="btn btn-secondary" type="button" onclick="decrement('interest', 0.01)">−</button>
+                        <input type="number" class="form-control" id="interest" value="0.05" step="0.01">
+                        <button class="btn btn-secondary" type="button" onclick="increment('interest', 0.01)">+</button>
+                    </div>
+                </div>
+
+                <div id="error-message" class="error-message">
+                    Inputs must not be zero.
+                </div>
+                <hr>
+                <div id="heatmap-error" class="error-message mb-3">
+                    Invalid heatmap parameters
+                </div>
+                <h5>Heatmap Parameters:</h5>
+                <div class="mb-3">
+                    <div class="container-basic">
+                        <div class="quarter-screen">
+                            <label for="spot-min" class="form-label">Min Spot Price:</label>
+                            <div class="input-group">
+                                <button class="btn btn-secondary" type="button" onclick="decrement('spot-min', 10)">−</button>
+                                <input type="number" class="form-control" id="spot-min" value="80.00" step="10">
+                                <button class="btn btn-secondary" type="button" onclick="increment('spot-min', 10)">+</button>
+                            </div>
+                        </div>
+                        <div class="quarter-screen align-right">
+                            <label for="spot-max" class="form-label">Max Spot Price:</label>
+                            <div class="input-group">
+                                <button class="btn btn-secondary" type="button" onclick="decrement('spot-max', 10)">−</button>
+                                <input type="number" class="form-control" id="spot-max" value="120.00" step="10">
+                                <button class="btn btn-secondary" type="button" onclick="increment('spot-max', 10)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="container-basic">
+                        <div class="quarter-screen">
+                            <label for="vol-min" class="form-label">Min Volatility:</label>
+                            <div class="input-group">
+                                <button class="btn btn-secondary" type="button" onclick="decrement('vol-min', 0.1)">−</button>
+                                <input type="number" class="form-control" id="vol-min" value="0.10" step="0.1">
+                                <button class="btn btn-secondary" type="button" onclick="increment('vol-min', 0.1)">+</button>
+                            </div>
+                        </div>
+                        <div class="quarter-screen align-right">
+                            <label for="vol-max" class="form-label">Max Volatility:</label>
+                            <div class="input-group">
+                                <button class="btn btn-secondary" type="button" onclick="decrement('vol-max', 0.1)">−</button>
+                                <input type="number" class="form-control" id="vol-max" value="0.40" step="0.1">
+                                <button class="btn btn-secondary" type="button" onclick="increment('vol-max', 0.1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-9 display-area">
+                <table class="table table-dark table-bordered mt-4">
+                    <thead>
+                        <tr>
+                            <th>Current Asset Price</th>
+                            <th>Strike Price</th>
+                            <th>Time to Maturity (Years)</th>
+                            <th>Volatility (σ)</th>
+                            <th>Risk-Free Interest Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td id="display-price">$100.00</td>
+                            <td id="display-strike">$100.00</td>
+                            <td id="display-maturity">1.00</td>
+                            <td id="display-volatility">0.20</td>
+                            <td id="display-interest">0.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="row mt-4 mb-3">
+                    <!-- Call Value Section -->
+                    <div class="col-md-6 p-2 call-section">
+                        <h4>CALL Value</h4>
+                        <p id="call-value" class="display-4">$10.45</p>
+                    </div>
+
+                    <!-- Put Value Section -->
+                    <div class="col-md-6 p-2 put-section">
+                        <h4>PUT Value</h4>
+                        <p id="put-value" class="display-4">$5.57</p>
+                    </div>
+                </div>
+                <div class="row mt-4 mb-3">
+                    <h2 class="mb-3">Option Price - Heatmaps:</h2>
+                    <div class="heatmap-container">
+                        <div class="call-heatmap">
+                            <div id="call-heatmap"></div>
+                        </div>
+                        <div class="put-heatmap">
+                            <div id="put-heatmap"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+    <!-- Increment/Decrement -->
+    <script>
+
+        // Update display values on increment/decrement
+        function increment(id, step) {
+            const input = document.getElementById(id);
+            input.value = (parseFloat(input.value) + step).toFixed(2);
+            handleInput()
+        }
+
+        function decrement(id, step) {
+            const input = document.getElementById(id);
+            input.value = (parseFloat(input.value) - step).toFixed(2);
+            handleInput();;
+        }
+
+        handleInput();
+
+        document.getElementById('price').addEventListener('input', handleInput);
+        document.getElementById('strike').addEventListener('input', handleInput);
+        document.getElementById('maturity').addEventListener('input', handleInput);
+        document.getElementById('volatility').addEventListener('input', handleInput);
+        document.getElementById('interest').addEventListener('input', handleInput);
+
+        document.getElementById('spot-min').addEventListener('input', updateHeatmaps);
+        document.getElementById('spot-max').addEventListener('input', updateHeatmaps);
+        document.getElementById('vol-min').addEventListener('input', updateHeatmaps);
+        document.getElementById('vol-max').addEventListener('input', updateHeatmaps);
+
+        function handleInput() {
+            updateTable();
+            calculateValues();
+            updateHeatmaps();
+        }
+
+        function updateTable() {
+            const price = parseFloat(document.getElementById('price').value);
+            const strike = parseFloat(document.getElementById('strike').value);
+            const maturity = parseFloat(document.getElementById('maturity').value);
+            const volatility = parseFloat(document.getElementById('volatility').value);
+            const interest = parseFloat(document.getElementById('interest').value);
+
+            document.getElementById('display-price').textContent = "$" + (isNaN(price) ? "0.00" : price.toFixed(2));
+            document.getElementById('display-strike').textContent = "$" + (isNaN(strike) ? "0.00" : strike.toFixed(2));
+            document.getElementById('display-maturity').textContent = isNaN(maturity) ? "0.00" : maturity.toFixed(2);
+            document.getElementById('display-volatility').textContent = isNaN(volatility) ? "0.00" : volatility.toFixed(2);
+            document.getElementById('display-interest').textContent = isNaN(interest) ? "0.00" : interest.toFixed(2);
+        }
+
+        async function calculateValues() {
+            // Get values from the input fields
+            const price = parseFloat(document.getElementById('price').value);
+            const strike = parseFloat(document.getElementById('strike').value);
+            const maturity = parseFloat(document.getElementById('maturity').value);
+            const volatility = parseFloat(document.getElementById('volatility').value);
+            const interest = parseFloat(document.getElementById('interest').value);
+
+            const errorMessage = document.getElementById('error-message');
+
+            if (price <= 0 || strike <= 0 || maturity <= 0 || volatility < 0) {
+                errorMessage.style.display = "block";
+                if (price <= 0) {
+                    document.getElementById('error-message').textContent = "Current price must be greater than zero";
+                }
+                else if (strike <= 0) {
+                    document.getElementById('error-message').textContent = "Strike price must be greater than zero";
+                }
+                else if (maturity <= 0) {
+                    document.getElementById('error-message').textContent = "Time to maturity must be greater than zero";
+                }
+                else if (volatility < 0) {
+                    document.getElementById('error-message').textContent = "Volatility cannot be negative";
+                }
+                return;
+            } else {
+                errorMessage.style.display = "none";
+            }
+
+            if (isNaN(price) || isNaN(strike) || isNaN(maturity) || isNaN(volatility) || isNaN(interest)) {
+                return;
+            }
+
+            try {
+                // Send a POST request to the Flask backend
+                const response = await fetch('/calculate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        price: price,
+                        strike: strike,
+                        maturity: maturity,
+                        volatility: volatility,
+                        interest: interest
+                    })
+                });
+
+                // Check if the response is successful
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                // Parse the response from the backend
+                const result = await response.json();
+
+                document.getElementById('call-value').textContent = "$" + result["call_price"].toFixed(2);
+                document.getElementById('put-value').textContent = "$" + result["put_price"].toFixed(2);
+
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                document.getElementById('error-message').textContent = "Error: Please ensure inputs are acceptable for Black-Scholes";
+            }
+        }
+
+        async function updateHeatmaps() {
+            const price = parseFloat(document.getElementById('price').value);
+            const strike = parseFloat(document.getElementById('strike').value);
+            const maturity = parseFloat(document.getElementById('maturity').value);
+            const volatility = parseFloat(document.getElementById('volatility').value);
+            const interest = parseFloat(document.getElementById('interest').value);
+
+            const minSpot = parseFloat(document.getElementById('spot-min').value);
+            const maxSpot = parseFloat(document.getElementById('spot-max').value);
+            const minVol = parseFloat(document.getElementById('vol-min').value);
+            const maxVol = parseFloat(document.getElementById('vol-max').value);
+
+            const errorMessage = document.getElementById('heatmap-error');
+
+            errorMessage.style.display = "none";
+
+            if (price <= 0 || strike <= 0 || maturity <= 0 || volatility < 0) {
+                return;
+            }
+
+            if (isNaN(price) || isNaN(strike) || isNaN(maturity) || isNaN(volatility) || isNaN(interest)) {
+                return;
+            }
+
+            if (isNaN(minSpot) || isNaN(maxSpot) || isNaN(minVol) || isNaN(maxVol)) {
+                return;
+            }
+
+            if (minSpot <=0 || maxSpot <= 0) {
+                errorMessage.textContent = "Spot price must be positive";
+                errorMessage.style.display = "block";
+                return;
+            }
+
+            if (minVol <= 0 || maxVol <= 0) {
+                errorMessage.textContent = "Volatility must be positive";
+                errorMessage.style.display = "block";
+                return;
+            }
+
+            if (minSpot >= maxSpot) {
+                errorMessage.textContent = "Please enter a valid spot price range";
+                errorMessage.style.display = "block";
+                return;
+            }
+            if (minVol >= maxVol) {
+                errorMessage.textContent = "Please enter a valid volatility range";
+                errorMessage.style.display = "block";
+                return;
+            }
+
+            try {
+                // Send a POST request to the Flask backend
+                const response = await fetch('/update_heatmaps', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        price: price,
+                        strike: strike,
+                        maturity: maturity,
+                        volatility: volatility,
+                        interest: interest,
+                        minSpot: minSpot,
+                        maxSpot: maxSpot,
+                        minVol: minVol,
+                        maxVol: maxVol
+                    })
+                });
+
+                // Check if the response is successful
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                const heatmaps = await response.json();
+
+                const callHeatmap = heatmaps[0];
+                Plotly.newPlot('call-heatmap', callHeatmap.data, callHeatmap.layout);
+
+                const putHeatmap = heatmaps[1];
+                Plotly.newPlot('put-heatmap', putHeatmap.data, putHeatmap.layout);
+
+            } catch (error) {
+                console.error('Error fetching heatmap data:', error);
+                document.getElementById('error-message').textContent = "Error: Please ensure inputs are acceptable for Black-Scholes";
+            }
+        }
+    </script>
+</body>
+</html>

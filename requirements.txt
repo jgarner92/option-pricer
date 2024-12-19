@@ -1,0 +1,4 @@
+flask
+plotly.graph_objs
+numpy
+scipy.stats
